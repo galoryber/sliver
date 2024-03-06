@@ -62,7 +62,6 @@ func ExecuteAssemblyCmd(cmd *cobra.Command, con *console.SliverClient, args []st
 		return
 	}
 
-	assemblyArgs := args[1:]
 	process, _ := cmd.Flags().GetString("process")
 	processArgsStr, _ := cmd.Flags().GetString("process-arguments")
 	processArgs := strings.Split(processArgsStr, " ")
@@ -77,6 +76,24 @@ func ExecuteAssemblyCmd(cmd *cobra.Command, con *console.SliverClient, args []st
 		return
 	}
 
+	sArgs := strings.Join(args[1:], " ")
+	assemblyArgs := []string{}
+	sb := &strings.Builder{}
+	quoted := false
+	for _, r := range sArgs {
+		if r == '"' {
+			quoted = !quoted
+			sb.WriteRune(r) // keep '"' otherwise comment this line
+		} else if !quoted && r == ' ' {
+			assemblyArgs = append(assemblyArgs, sb.String())
+			sb.Reset()
+		} else {
+			sb.WriteRune(r)
+		}
+	}
+	if sb.Len() > 0 {
+		assemblyArgs = append(assemblyArgs, sb.String())
+	}
 	assemblyArgsStr := strings.Join(assemblyArgs, " ")
 	assemblyArgsStr = strings.TrimSpace(assemblyArgsStr)
 	if len(assemblyArgsStr) > 256 && !inProcess {
